@@ -3,6 +3,7 @@ package request
 import (
 	"errors"
 	"fmt"
+	"github.com/posixenjoyer/httpfromtcp/internal/headers"
 	_ "github.com/stretchr/testify/assert"
 	"io"
 	"strings"
