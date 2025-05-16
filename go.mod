@@ -1,4 +1,4 @@
-module github.com/posixenjoyer/httptotcp
+module github.com/posixenjoyer/httpfromtcp
 
 go 1.24.3
 
