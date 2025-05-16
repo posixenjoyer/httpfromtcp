@@ -91,7 +91,15 @@ func TestRequestLineParse(t *testing.T) {
 	_, err = RequestFromReader(strings.NewReader("/java GET HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
 	require.Error(t, err)
 
-	// Test: Invalid HTTP Version
-	_, err = RequestFromReader(strings.NewReader("GET /coffee HTTP/6.9\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	// Test: Non-Standard, But Valid HTTP Version
+	r, err = RequestFromReader(strings.NewReader("GET /coffee HTTP/6.9\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	require.NoError(t, err)
+	assert.Equal(t, "6.9", r.RequestLine.HttpVersion)
+
+	_, err = RequestFromReader(strings.NewReader("GET /coffee HTTP//6.9\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
 	require.Error(t, err)
+
+	_, err = RequestFromReader(strings.NewReader("GET /coffee HTTP/6.9/1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n"))
+	require.Error(t, err)
+
 }

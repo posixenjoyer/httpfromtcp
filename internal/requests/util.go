@@ -2,6 +2,8 @@ package request
 
 import (
 	"slices"
+	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -25,5 +27,29 @@ func verifyCaseAndContents(methodName string) bool {
 }
 
 func verifyVersion(version string) bool {
-	return version == "HTTP/1.1"
+	if !strings.Contains(version, "/") {
+		return false
+	}
+	parts := strings.Split(version, "/")
+	if len(parts) != 2 {
+		return false
+	}
+	protocol := parts[0]
+	versionNum := parts[1]
+	if protocol != "HTTP" {
+		return false
+	}
+	versionNumParts := strings.Split(versionNum, ".")
+	if len(versionNumParts) != 2 {
+		return false
+	}
+	major := versionNumParts[0]
+	minor := versionNumParts[1]
+	if _, err := strconv.Atoi(major); err != nil {
+		return false
+	}
+	if _, err := strconv.Atoi(minor); err != nil {
+		return false
+	}
+	return true
 }

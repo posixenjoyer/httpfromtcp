@@ -121,14 +121,11 @@ func parseRequestLine(requestLine []byte) (RequestLine, int, error) {
 		return RequestLine{}, len(requestStr) + len("\r\n"), err
 	}
 
-	fmt.Printf("requestArgs[0]: %s\n", requestArgs[0])
-
 	if !verifyMethod(requestArgs[0]) {
 		err := fmt.Errorf("error: Method name verification failed")
 		return RequestLine{}, len(requestStr) + len("\r\n"), err
 	}
 
-	fmt.Printf("RA[2]: %s, Len(RA[2}): %d\n", requestArgs[2], len(requestArgs[2]))
 	version := strings.TrimRight(requestArgs[2], "\r\n ")
 
 	if !verifyVersion(version) {
