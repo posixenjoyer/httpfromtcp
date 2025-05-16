@@ -25,7 +25,7 @@ func (r *Request) parse(message []byte) (int, error) {
 	if r.State == INITIALIZED {
 		parsedRequestLine, count, err = parseRequestLine(message)
 
-		if r.RequestLine.IsEmpty() {
+		if !parsedRequestLine.IsEmpty() {
 			r.State = DONE
 			r.RequestLine = parsedRequestLine
 		}
@@ -63,11 +63,16 @@ func RequestFromReader(request io.Reader) (*Request, error) {
 	}
 
 	for parsedRequest.State == INITIALIZED {
-		if readToIndex == BUF_SZ {
-			buffer = append(buffer, make([]byte, readToIndex)...)
+		bufLen := len(buffer)
+		if readToIndex == bufLen {
+			newBuffer := make([]byte, bufLen*2)
+			copy(newBuffer, buffer)
+			buffer = newBuffer
 		}
 
 		lastCount, err := request.Read(buffer[readToIndex:])
+		readToIndex += lastCount
+
 		if err != nil {
 			if err == io.EOF {
 				parsedRequest.State = CHECK
@@ -81,8 +86,9 @@ func RequestFromReader(request io.Reader) (*Request, error) {
 
 		if count > 0 {
 			parsedRequest.State = DONE
+			copy(buffer, buffer[count:readToIndex])
+			readToIndex -= count
 		}
-		readToIndex += lastCount
 	}
 
 	if parsedRequest.State == CHECK {
@@ -97,12 +103,13 @@ func RequestFromReader(request io.Reader) (*Request, error) {
 
 func parseRequestLine(requestLine []byte) (RequestLine, int, error) {
 
-	requestStr := string(requestLine)
-
-	if !strings.Contains(requestStr, "\r\n") {
+	if !strings.Contains(string(requestLine), "\r\n") {
 		return RequestLine{}, 0, nil
 	}
-	requestArgs := strings.Split(string(requestLine), " ")
+
+	requestStr := strings.Split(string(requestLine), "\r\n")[0]
+	requestStr = strings.Trim(requestStr, "\r\n")
+	requestArgs := strings.Split(string(requestStr), " ")
 
 	if len(requestArgs) < 3 {
 		err := fmt.Errorf("error: Not enough fields in request-line")
@@ -121,14 +128,18 @@ func parseRequestLine(requestLine []byte) (RequestLine, int, error) {
 		return RequestLine{}, len(requestStr) + len("\r\n"), err
 	}
 
-	if !verifyVersion(requestArgs[2]) {
+	fmt.Printf("RA[2]: %s, Len(RA[2}): %d\n", requestArgs[2], len(requestArgs[2]))
+	version := strings.TrimRight(requestArgs[2], "\r\n ")
+
+	if !verifyVersion(version) {
 		err := fmt.Errorf("error: Invalid HTTP Version: %s", requestArgs[2])
+		fmt.Printf("RS: %s, Version: %s\nLen(version): %d\n", requestStr, version, len(version))
 		return RequestLine{}, len(requestStr) + len("\r\n"), err
 	}
 	parsedReqestLine := RequestLine{
 		Method:        requestArgs[0],
 		RequestTarget: requestArgs[1],
-		HttpVersion:   strings.Split(requestArgs[2], "/")[1],
+		HttpVersion:   strings.Split(version, "/")[1],
 	}
 
 	return parsedReqestLine, len(requestStr) + len("\r\n"), nil

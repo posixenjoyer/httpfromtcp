@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/posixenjoyer/httpfromtcp/internal/requests/request"
 	"io"
 	"net"
 	"os"
